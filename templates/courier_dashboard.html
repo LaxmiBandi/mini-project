@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Courier Dashboard - Farm to Plate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <script>
+    // ✅ Update delivery status
+    async function updateDelivery(pid, nextStage, orderId) {
+      const loc = document.getElementById('loc-' + pid).value;
+      const resp = await fetch('/update_delivery', {
+        method: 'POST',
+        credentials: "include", 
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          product_id: pid,
+          order_id: orderId,
+          current_location: loc,
+          stage: nextStage
+        })
+      });
+
+      const j = await resp.json();
+
+      if (j.success) {
+        alert("✅ Updated successfully!\nStage: " + nextStage + "\nTx Hash: " + j.tx_hash);
+        location.reload();
+      } else {
+        alert("❌ Error: " + j.error);
+      }
+    }
+
+    // ✅ Courier pickup signing
+    async function courierPickup(productId, orderId, btn) {
+  btn.disabled = true;
+  btn.innerHTML = "⏳ Processing...";
+
+  const resp = await fetch("/courier_pickup", {
+    method: "POST",
+    credentials: "include", 
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({product_id: productId, order_id: orderId})
+  });
+
+  const data = await resp.json();
+
+  if (data.success) {
+    alert("✅ Pickup Signed Successfully!\nTx: " + data.tx_hash);
+    location.reload();
+  } else {
+    alert("❌ " + data.error);
+    btn.disabled = false;
+    btn.innerHTML = "🚚 Confirm Pickup (Sign)";
+  }
+}
+  
+  </script>
+</head>
+
+<body class="bg-light">
+  <nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <div class="container-fluid">
+      <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">Farm to Plate</a>
+      <div class="d-flex">
+        <a href="{{ url_for('logout_courier') }}" class="btn btn-light">Logout</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <div class="card shadow p-4">
+      <h2 class="text-success mb-3">Welcome, {{ courier.name }}</h2>
+      <p><strong>Your Wallet:</strong> {{ courier.wallet_address }}</p>
+
+      <h4 class="mt-4 mb-3">📦 Assigned Deliveries</h4>
+
+      {% if deliveries %}
+      <ul class="list-group">
+        {% for d in deliveries %}
+        <li class="list-group-item mb-3">
+
+          <!-- Product Details -->
+          <h5 class="text-primary">{{ d.product_name }}</h5>
+          <p>
+            <strong>Product ID:</strong> {{ d.product_id }} <br>
+            <strong>Quantity Ordered:</strong> {{ d.quantity }} kg<br>
+            <strong>Order ID:</strong> {{ d.order_id }}<br>
+            <strong>Price:</strong> ₹{{ d.price }} / kg<br>
+            <strong>Status:</strong> {{ d.status if d.status else "Pending" }}<br>
+          </p>
+
+          <hr>
+
+          <!-- Farmer -->
+          <!-- Farmer -->
+<p>
+  <strong>Farmer:</strong> {{ d.farmer_name }} <br>
+  <strong>Farmer Wallet:</strong> {{ d.farmer_wallet }} <br>
+  <strong>Farmer Address:</strong> {{ d.farmer_address }} <br>
+
+  {% if d.farmer_map %}
+  <strong>Farmer Map:</strong>
+  <a href="{{ d.farmer_map }}" target="_blank">Open in Google Maps</a><br>
+  {% endif %}
+</p>
+
+
+          <hr>
+
+          <!-- Customer Info -->
+          <h6 class="text-success">👤 Customer Details</h6>
+          <p>
+            <strong>Name:</strong> {{ d.customer_name }}<br>
+            <strong>Phone:</strong> {{ d.customer_phone or "Not Provided" }}<br>
+            <strong>Address:</strong> {{ d.customer_address }}<br>
+
+            {% if d.customer_map %}
+            <strong>Map:</strong>
+            <a href="{{ d.customer_map }}" target="_blank">Open in Google Maps</a>
+            <br>
+            {% endif %}
+          </p>
+
+          <hr>
+          <a class="btn btn-outline-danger" href="{{ url_for('support_dashboard') }}">
+    Help Requests
+</a>
+
+
+          <!-- Blockchain Delivery -->
+          <p>
+            <strong>Current Blockchain Location:</strong> {{ d.current_location }}<br>
+          </p>
+
+          <input id="loc-{{ d.product_id }}" class="form-control mb-2"
+                 placeholder="Enter new location">
+
+          {% if d.stage == 0 %}
+<button id="pickupBtn{{ d.product_id }}" 
+        onclick="courierPickup('{{ d.product_id }}', '{{ d.order_id }}', this)"
+        class="btn btn-dark w-100 mb-3">
+  🚚 Confirm Pickup (Sign)
+</button>
+
+{% else %}
+<button class="btn btn-secondary w-100 mb-3" disabled>
+  ✔ Pickup Done
+</button>
+{% endif %}
+
+
+<!-- 🚦 Sequential Progress Buttons -->
+<div class="d-flex flex-wrap gap-2">
+
+  <!-- RECEIVED FROM FARMER -->
+  <button
+      onclick="updateDelivery('{{ d.product_id }}', 'Received from Farmer', '{{ d.order_id }}')"
+      class="btn btn-primary flex-fill"
+      {% if d.stage != 1 %}disabled{% endif %}>
+    Received from Farmer
+  </button>
+
+  <!-- SHIPPED -->
+  <button
+      onclick="updateDelivery('{{ d.product_id }}', 'Shipped', '{{ d.order_id }}')"
+      class="btn btn-info flex-fill"
+      {% if d.stage != 2 %}disabled{% endif %}>
+    Shipped
+  </button>
+
+  <!-- OUT FOR DELIVERY -->
+  <button
+      onclick="updateDelivery('{{ d.product_id }}', 'Out for Delivery', '{{ d.order_id }}')"
+      class="btn btn-warning flex-fill"
+      {% if d.stage != 3 %}disabled{% endif %}>
+    Out for Delivery
+  </button>
+
+  <!-- DELIVERED -->
+  <button
+      onclick="updateDelivery('{{ d.product_id }}', 'Delivered', '{{ d.order_id }}')"
+      class="btn btn-success flex-fill"
+      {% if d.stage != 4 %}disabled{% endif %}>
+    Delivered
+  </button>
+
+</div>
+        </li>
+        {% endfor %}
+      </ul>
+
+      {% else %}
+        <div class="alert alert-info">No deliveries assigned yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

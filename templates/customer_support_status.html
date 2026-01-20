@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Support Status - Customer</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-success">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">Customer Support Tracking</span>
+    <a class="btn btn-light" href="{{ url_for('customer_home') }}">Back</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+
+  <h3 class="text-success mb-4">📁 Your Support Requests</h3>
+
+  {% if reqs %}
+  <table class="table table-bordered shadow">
+    <thead class="table-success">
+      <tr>
+        <th>Product ID</th>
+        <th>Type</th>
+        <th>Reason</th>
+        <th>Status</th>
+        <th>Refund</th>
+        <th>Updated</th>
+      </tr>
+    </thead>
+
+    <tbody>
+    {% for r in reqs %}
+      <tr>
+        <td>{{ r.product_id }}</td>
+        <td>{{ r.type }}</td>
+        <td>{{ r.reason }}</td>
+
+        <td>
+          {% if r.status == "Pending" %}
+            <span class="badge bg-warning">Waiting for Courier</span>
+
+          {% elif r.status == "Pickup Pending" %}
+            <span class="badge bg-info">Courier will pick the product</span>
+
+          {% elif r.status == "Picked Up" %}
+            <span class="badge bg-primary">Refund Processing</span>
+
+          {% elif r.status == "Approved" %}
+            <span class="badge bg-success">Completed</span>
+
+          {% elif r.status == "Rejected" %}
+            <span class="badge bg-danger">Rejected</span>
+
+          {% else %}
+            <span class="badge bg-secondary">{{ r.status }}</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if r.refund_tx %}
+            <span class="text-success fw-bold">Refunded</span><br>
+            <small>{{ r.refund_tx[:15] }}...</small>
+          {% else %}
+            <span class="text-muted">—</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if r.updated_at %}
+            {{ r.updated_at.strftime("%b %d %I:%M %p") }}
+          {% else %}
+            {{ r.created_at.strftime("%b %d %I:%M %p") }}
+          {% endif %}
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  {% else %}
+    <p class="alert alert-info">No support requests found.</p>
+  {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>

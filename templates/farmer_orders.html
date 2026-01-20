@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Farmer Orders - Farm to Plate</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-success">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{{ url_for('farmer_profile') }}">Farm to Plate</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-light">Logout</a>
+  </div>
+</nav>
+
+<div class="container my-4">
+  <div class="card shadow p-4">
+    <h3 class="text-success">📦 Orders for Your Crops</h3>
+
+    {% if deliveries %}
+    <ul class="list-group">
+      {% for d in deliveries %}
+      <li class="list-group-item mb-3">
+
+        <h5 class="text-primary">{{ d.product_name }}</h5>
+        <p>
+          <strong>Order ID:</strong> {{ d.order_id }} <br>
+          <strong>Quantity:</strong> {{ d.quantity }} kg <br>
+          <strong>Status:</strong> {{ d.status }}
+        </p>
+
+        <h6 class="text-success">Customer</h6>
+        <p>
+          <strong>{{ d.customer_name }}</strong><br>
+          📞 {{ d.customer_phone }} <br>
+          🏠 {{ d.customer_address }}
+        </p>
+
+        {% if d.history %}
+        <h6 class="text-secondary">📍 Tracking Timeline</h6>
+        <div class="border-start border-3 ps-3 ms-2">
+          {% for h in d.history %}
+          <div class="mb-2">
+            <span class="text-success fw-bold">{{ h.stage }}</span>
+            <span class="text-secondary">({{ h.timestamp }})</span>
+            {% if h.location %}
+            <div class="small text-muted">{{ h.location }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="alert alert-info">No orders received yet.</div>
+    {% endif %}
+
+  </div>
+</div>
+
+</body>
+</html>

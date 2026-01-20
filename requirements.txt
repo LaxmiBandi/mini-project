@@ -1,0 +1,9 @@
+flask
+flask-session
+python-dotenv
+pymongo
+dnspython
+web3
+flask-mail
+itsdangerous
+gunicorn

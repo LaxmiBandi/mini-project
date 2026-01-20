@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Support Requests - Courier</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-success">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">Courier Support Center</span>
+    <a class="btn btn-light" href="{{ url_for('courier_dashboard') }}">Back</a>
+  </div>
+</nav>
+
+<div class="container mt-4">
+    <h3 class="text-success mb-4">📩 Support Requests from Customers</h3>
+
+    {% if requests %}
+    <table class="table table-bordered table-striped shadow">
+        <thead class="table-success">
+            <tr>
+                <th>Product ID</th>
+                <th>Customer</th>
+                <th>Type</th>
+                <th>Reason</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+{% for r in requests %}
+<tr>
+  <td>{{ r.product_id }}</td>
+  <td>{{ r.customer_email }}</td>
+  <td>{{ r.type }}</td>
+  <td>{{ r.reason }}</td>
+  <td>
+  {% if r.status == "Pending" %}
+    <span class="badge bg-warning">Pending</span>
+
+  {% elif r.status == "Pickup Pending" %}
+    <span class="badge bg-info">Pickup Pending</span>
+
+  {% elif r.status == "Picked Up" %}
+    <span class="badge bg-primary">Picked Up</span>
+
+  {% elif r.status == "Approved" %}
+    <span class="badge bg-success">Approved</span>
+
+  {% elif r.status == "Rejected" %}
+    <span class="badge bg-danger">Rejected</span>
+
+  {% else %}
+    <span class="badge bg-secondary">{{ r.status }}</span>
+  {% endif %}
+</td>
+
+
+  <td>
+    {% if r.status == "Pending" %}
+        {% if r.type == "cancel" %}
+            <button class="btn btn-success btn-sm"
+                    onclick="updateRequest('{{ r._id }}', 'Approved')">
+                Approve Refund
+            </button>
+
+        {% elif r.type == 'return' %}
+            <button class="btn btn-warning btn-sm"
+                    onclick="updateRequest('{{ r._id }}', 'Pickup Pending')">
+                Pickup Approved
+            </button>
+
+        {% else %}
+            <button class="btn btn-info btn-sm"
+                    onclick="updateRequest('{{ r._id }}', 'Approved')">
+                Mark Resolved
+            </button>
+        {% endif %}
+
+        <button class="btn btn-danger btn-sm"
+                onclick="updateRequest('{{ r._id }}', 'Rejected')">
+            Reject
+        </button>
+
+    {% elif r.status == "Pickup Pending" %}
+        <button class="btn btn-primary btn-sm"
+                onclick="updateRequest('{{ r._id }}', 'Picked Up')">
+            Confirm Pickup (Refund)
+        </button>
+
+    {% else %}
+        <span class="badge bg-secondary">Closed</span>
+    {% endif %}
+</td>
+
+</tr>
+{% endfor %}
+</tbody>
+
+    </table>
+
+    {% else %}
+    <p class="alert alert-info">No support requests.</p>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+function updateRequest(id, status){
+    fetch("/support_update", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({request_id: id, status: status})
+    })
+    .then(res=>res.json())
+    .then(data=>{
+        if(data.success){
+            alert("Updated successfully!");
+            location.reload();
+        }
+        else{
+            alert("Update failed!");
+        }
+    })
+}
+</script>
+
+</body>
+</html>

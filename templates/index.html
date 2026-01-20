@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Farm to Plate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+      /* ✅ Uniform image size + hover overlay */
+      .image-container {
+        position: relative;
+        overflow: hidden;
+      }
+      .image-container img {
+        width: 100%;
+        height: 220px;       /* same height for all */
+        object-fit: cover;   /* crop nicely */
+        transition: 0.5s ease;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      }
+      .image-container .overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(0,0,0,0.6);
+        color: #fff;
+        padding: 10px;
+        opacity: 0;
+        transition: 0.5s ease;
+        font-size: 0.9rem;
+      }
+      .image-container:hover img {
+        filter: brightness(70%);
+      }
+      .image-container:hover .overlay {
+        opacity: 1;
+      }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-success fixed-top">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="#">Farm to Plate</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarContent">
+            <ul class="navbar-nav">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle btn btn-light text-dark px-3" href="#" role="button" data-bs-toggle="dropdown">
+                        Login
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{{ url_for('login_customer') }}">Login as Customer</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('login_farmer') }}">Login as Farmer</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('login_courier') }}">Login as Courier</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero Section -->
+<section class="hero bg-light text-center py-5 mt-5">
+  <div class="container">
+    <h1 class="display-4 fw-bold text-success">Connecting Farms to Families</h1>
+    <p class="lead">A blockchain-powered fair trading platform where farmers and customers meet directly.</p>
+
+    <!-- ✅ Interactive images with hover overlay -->
+    <div class="row mt-4">
+      <div class="col-md-3 col-6 mb-3">
+        <div class="image-container">
+          <img src="{{ url_for('static', filename='images/mainpic.jpg') }}" alt="Farm Image 1">
+          <div class="overlay">Fresh produce direct from farms</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-3">
+        <div class="image-container">
+          <img src="{{ url_for('static', filename='images/crop.jpg') }}" alt="Farm Image 2">
+          <div class="overlay">Healthy grains for your family</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-3">
+        <div class="image-container">
+          <img src="{{ url_for('static', filename='images/mainpic2.jpg') }}" alt="Farm Image 3">
+          <div class="overlay">Trusted farmers, fair pricing</div>
+        </div>
+      </div>
+      <div class="col-md-3 col-6 mb-3">
+        <div class="image-container">
+          <img src="{{ url_for('static', filename='images/crop1.jpg') }}" alt="Farm Image 4">
+          <div class="overlay">Delivered fresh in 2–3 days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="features py-5 bg-white">
+    <div class="container text-center">
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <h3>🌾 For Farmers</h3>
+                <p>Post your cereals, manage your profile, and trade transparently.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h3>🛒 For Customers</h3>
+                <p>Buy directly from farmers with verified quality and fair pricing.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h3>🔗 Blockchain Secure</h3>
+                <p>Every transaction is traceable, secure, and fair for both parties.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h3>🚚 For Couriers</h3>
+                <p>Deliver farm products efficiently with blockchain-tracked authenticity.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h3>🚀 Fast & Fresh Delivery</h3>
+                <p>Your order arrives within 2–3 days, carefully packed to preserve farm‑fresh quality.</p>
+            </div>
+            <div class="col-md-4 mb-4">
+                <h3>🌍 Sustainability</h3>
+                <p>Promoting eco‑friendly farming practices and reducing food miles for a greener planet.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-success text-white text-center py-3">
+    <p class="mb-0">© 2025 Farm to Plate. All rights reserved.</p>
+</footer>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

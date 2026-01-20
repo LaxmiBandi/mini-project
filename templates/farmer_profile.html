@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Farmer Profile - Farm to Plate</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-success">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">Farm to Plate</a>
+    <a class="btn btn-light ms-auto" href="{{ url_for('logout') }}">Logout</a>
+    <a class="btn btn-primary ms-2" href="{{ url_for('post_cereal') }}">Post Cereal</a>
+  </div>
+</nav>
+
+<div class="container py-5">
+
+  <!-- ✅ FLASH MESSAGES ADDED HERE -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  <!-- END FLASH MESSAGES -->
+
+  <!-- Farmer Info -->
+  <div class="card shadow p-4 mb-4">
+    <h3 class="text-success mb-4">Your Profile</h3>
+    <p><strong>Name:</strong> {{ farmer.name }}</p>
+    <p><strong>Email:</strong> {{ farmer.email }}</p>
+    <p><strong>Wallet Address:</strong> {{ farmer.wallet_address }}</p>
+  </div>
+
+  <!-- ✅ Address Section -->
+  <div class="card shadow p-4 mb-4">
+    <h5 class="text-success">📍 Farm Address</h5>
+    <hr>
+
+    {% if farmer.address %}
+      <p><strong>Current Address:</strong> {{ farmer.address }}</p>
+      {% if farmer.map_link %}
+        <p><strong>Map Link:</strong>
+          <a href="{{ farmer.map_link }}" target="_blank" class="text-primary">View on Google Maps</a>
+        </p>
+      {% endif %}
+      <button class="btn btn-outline-primary mt-2"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#editAddressForm"
+              aria-expanded="false"
+              aria-controls="editAddressForm">
+        ✏ Change Address
+      </button>
+    {% else %}
+      <div class="alert alert-warning mt-2">⚠ No address added yet. Please add your farm address below.</div>
+      <button class="btn btn-success"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#editAddressForm"
+              aria-expanded="true"
+              aria-controls="editAddressForm">
+        ➕ Add Address
+      </button>
+    {% endif %}
+
+    <!-- Collapsible Address Form -->
+    <div class="collapse {% if not farmer.address %}show{% endif %} mt-3" id="editAddressForm">
+      <form method="POST" action="{{ url_for('update_farmer_address') }}">
+        <div class="mb-3">
+          <label class="form-label">Farm Address</label>
+          <textarea name="address" class="form-control"
+                    placeholder="Enter your farm address" required>{{ farmer.address or '' }}</textarea>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Google Maps Link (optional)</label>
+          <input type="url" name="map_link" class="form-control"
+                 placeholder="Paste your Google Maps link"
+                 value="{{ farmer.map_link or '' }}">
+        </div>
+        <button type="submit" class="btn btn-success w-100">
+          💾 Save / Update Address
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ✅ Posted Cereals -->
+  <div class="card shadow p-4">
+    <h4 class="text-success mb-3">Your Posted Cereals</h4>
+    {% if cereals %}
+    <table class="table table-bordered align-middle">
+      <thead class="table-success">
+        <tr>
+          <th>Name</th>
+          <th>Quantity (kg)</th>
+          <th>Price (₹/kg)</th>
+          <th>Description</th>
+          <th>Rating</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cereal in cereals %}
+        <tr>
+          <td>{{ cereal.name }}</td>
+          <td>{{ cereal.totalQuantity }}</td>
+
+          <td>{{ cereal.price }}</td>
+          <td>{{ cereal.description }}</td>
+          <td>⭐ {{ cereal.avg_rating or "No rating" }}</td>
+
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="alert alert-info mt-2">You haven’t posted any cereals yet.</div>
+    {% endif %}
+  </div>
+
+  <!-- 🔥 TRACKING BUTTON BELOW POSTED CEREALS -->
+<a href="{{ url_for('farmer_orders') }}" class="btn btn-success mt-3">
+  📦 View Order Tracking
+</a>
+
+</div>
+
+<!-- ✅ Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
+ 

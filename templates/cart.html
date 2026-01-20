@@ -1,0 +1,201 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cart - Farm to Fork</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">Farm to Fork</a>
+        <a class="btn btn-light ms-auto" href="{{ url_for('customer_home') }}">Home</a>
+        <a class="btn btn-light ms-2" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h3>Your Cart</h3>
+
+    {% if cart_items %}
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>Cereal</th>
+                <th>Quantity (kg)</th>
+                <th>Price (₹/kg)</th>
+                <th>Total (₹)</th>
+                <th>Farmer Name</th>
+                <th>Farmer Wallet</th>
+                <th>Action</th> <!-- ✅ Added new column -->
+            <!-- </tr>
+        </thead>
+        <tbody>
+            {% set grand_total = 0 %}
+            {% for item in cart_items %}
+            {% set total = item.total %}
+            {% set grand_total = grand_total + item.total %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ total }}</td>
+                <td>{{ item.farmer_name }}</td>
+                <td>{{ item.farmer_wallet }}</td>
+                <td>
+                    <!-- ✅ Delete Button -->
+                    <!-- <form action="{{ url_for('remove_from_cart') }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="product_id" value="{{ item.product_id }}">
+                        <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <th colspan="3">Grand Total</th>
+                <th colspan="4">₹{{ grand_total }}</th>
+            </tr>
+        </tbody>
+    </table> -->
+
+    <!-- <div class="card p-3 mt-3">
+        <h5>Pay Farmers</h5>
+
+        <!-- ✅ Pay Now Form (redirects to order confirmation) -->
+        <!-- <form action="{{ url_for('pay_now') }}" method="POST">
+            <button type="submit" class="btn btn-success w-100">Pay Now</button>
+        </form>
+
+        <div id="payResult" class="mt-2"></div>
+    </div>
+    {% else %} -->
+    <!-- <div class="alert alert-info mt-2">Your cart is empty.</div>
+    {% endif %}
+</div> --> -->
+
+<!-- <script>
+document.getElementById("payNowBtn")?.addEventListener("click", async function() {
+    const payResultDiv = document.getElementById("payResult");
+    payResultDiv.innerHTML = "Processing payments...";
+
+    try {
+        const res = await fetch("/pay_farmer", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"}
+        });
+        const data = await res.json();
+        if (!data.success) {
+            payResultDiv.innerHTML = `<div class="alert alert-danger">Error: ${data.error}</div>`;
+            return;
+        }
+
+        let html = "";
+        for (const r of data.results) {
+            if (r.success) {
+                html += `<div class="alert alert-success">Paid ${r.item}: Tx ${r.txHash}</div>`;
+            } else {
+                html += `<div class="alert alert-danger">Failed ${r.item}: ${r.error}</div>`;
+            }
+        }
+        payResultDiv.innerHTML = html;
+        setTimeout(() => location.reload(), 2000);
+    } catch (err) {
+        payResultDiv.innerHTML = `<div class="alert alert-danger">Network error: ${err.message}</div>`;
+    }
+});
+</script> -->
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> --> 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your Cart - Farm to Plate</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-success">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">Farm to Plate</a>
+        <a class="btn btn-light ms-auto" href="{{ url_for('customer_home') }}">Home</a>
+        <a class="btn btn-light ms-2" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h3>Your Cart</h3>
+
+    {% if cart_items %}
+    <table class="table table-bordered mt-3">
+        <thead>
+            <tr>
+                <th>Cereal</th>
+                <th>Quantity (kg)</th>
+                <th>Price (₹/kg)</th>
+                <th>Total (₹)</th>
+                <th>Farmer Name</th>
+                <th>Farmer Wallet</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for item in cart_items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>
+                    <!-- Quantity controls -->
+                    <form action="{{ url_for('update_cart_quantity') }}" method="POST" style="display:inline-block;">
+                        <input type="hidden" name="product_id" value="{{ item.product_id }}">
+                        <input type="hidden" name="action" value="decrease">
+                        <button class="btn btn-sm btn-secondary" type="submit">-</button>
+                    </form>
+                    <span class="mx-2">{{ item.quantity }}</span>
+                    <form action="{{ url_for('update_cart_quantity') }}" method="POST" style="display:inline-block;">
+                        <input type="hidden" name="product_id" value="{{ item.product_id }}">
+                        <input type="hidden" name="action" value="increase">
+                        <button class="btn btn-sm btn-secondary" type="submit">+</button>
+                    </form>
+                </td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.total }}</td>
+                <td>{{ item.farmer_name }}</td>
+                <td>{{ item.farmer_wallet }}</td>
+                <td>
+                    <form action="{{ url_for('remove_from_cart') }}" method="POST">
+                        <input type="hidden" name="product_id" value="{{ item.product_id }}">
+                        <button class="btn btn-danger btn-sm" type="submit">Remove</button>
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <th colspan="3">Grand Total</th>
+            <th colspan="4">₹{{ total_cost }}</th>
+        </tr>
+        </tbody>
+    </table>
+
+    <div class="card p-3 mt-3">
+        <h5>Pay Farmers</h5>
+        <form action="{{ url_for('pay_now') }}" method="POST">
+            <button type="submit" class="btn btn-success w-100">Pay Now</button>
+        </form>
+        <div id="payResult" class="mt-2"></div>
+    </div>
+
+    {% else %}
+        <div class="alert alert-info mt-2">Your cart is empty.</div>
+    {% endif %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

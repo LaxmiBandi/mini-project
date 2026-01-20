@@ -1,0 +1,18 @@
+# Python
+venv/
+.venv/
+__pycache__/
+instance/
+flask_session/
+
+# Environment variables
+.env
+
+# Node
+node_modules/
+
+# OS files
+.DS_Store
+
+# Local data
+users.json
