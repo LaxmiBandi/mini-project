@@ -110,11 +110,15 @@
         {% for cereal in cereals %}
         <tr>
           <td>{{ cereal.name }}</td>
-          <td>{{ cereal.totalQuantity }}</td>
+          <td>{{ cereal.availableQuantity }}</td>
 
           <td>{{ cereal.price }}</td>
           <td>{{ cereal.description }}</td>
-          <td>⭐ {{ cereal.avg_rating or "No rating" }}</td>
+          <td>{% if cereal.avg_rating != "No rating" %}
+    ⭐ {{ cereal.avg_rating }} / 5
+  {% else %}
+    <span class="text-muted">No ratings yet</span>
+  {% endif %}</td>
 
         </tr>
         {% endfor %}

@@ -7,33 +7,34 @@ import os
 import json
 from flask import request, jsonify
 from datetime import datetime
+
 from flask_mail import Mail, Message
-from itsdangerous import URLSafeTimedSerializer
 
 
 from time import time, sleep
 
+load_dotenv()
 processing_pickups = set()
 
-
-load_dotenv()
-
 app = Flask(__name__)
-app.config['SECRET_KEY'] = os.getenv("SECRET_KEY")
+
+
+
+
+app.config['SECRET_KEY'] = os.environ.get("SECRET_KEY")
+
  # Keep this secret in production!
-
-
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-
 app.config['MAIL_USERNAME'] = os.getenv("MAIL_USERNAME")
 app.config['MAIL_PASSWORD'] = os.getenv("MAIL_PASSWORD")
 app.config['MAIL_DEFAULT_SENDER'] = os.getenv("MAIL_USERNAME")
 
-
 mail = Mail(app)
-s = URLSafeTimedSerializer(app.config['SECRET_KEY'])
+
+
+
 
 # ------------------- BLOCKCHAIN CONNECTION -------------------
 w3 = Web3(Web3.HTTPProvider(os.getenv("RPC_URL")))
@@ -41,6 +42,10 @@ master_private_key = os.getenv("MASTER_PRIVATE_KEY")
 
 MASTER_WALLET_ADDRESS = os.getenv("MASTER_WALLET_ADDRESS")
 MASTER_PRIVATE_KEY = os.getenv("MASTER_PRIVATE_KEY")
+
+if not MASTER_WALLET_ADDRESS or not MASTER_PRIVATE_KEY:
+    raise RuntimeError("❌ MASTER wallet env variables missing")
+
 
 # ✅ Load ABI from compiled_code.json
 with open('compiled_code.json') as f:
@@ -84,8 +89,7 @@ support_collection = db["support_requests"]
 #         {"_id": cereal["_id"]},
 #         {"$set": {"blockchain_id": idx}}
 #     )
-MASTER_WALLET_ADDRESS = os.getenv("PUBLIC_ADDRESS")
-MASTER_PRIVATE_KEY = os.getenv("MASTER_PRIVATE_KEY")
+
 
 
 # ------------------- FUND NEW WALLET -------------------
@@ -264,12 +268,17 @@ def signup_farmer():
             "wallet_address": wallet_address,
             "private_key": private_key,
             "phone": phone,
-            "verified": False
+            "verified": True
         })
 
-        return redirect(url_for("send_verification", email=email, role="farmer"))
+        flash("Signup successful! You can login now.", "success")
+        return redirect(url_for("login_farmer"))
 
+    # ✅ IMPORTANT: render page on GET
     return render_template("signup_farmer.html")
+
+
+    
 
 
 # ------------------- CUSTOMER SIGNUP -------------------
@@ -305,11 +314,12 @@ def signup_customer():
                 "phone": phone,
                 "wallet_address": wallet_address,
                 "private_key": private_key,
-                "verified": False
+                "verified": True
             })
 
-            flash("Signup successful! Verification email sent.", "success")
-            return redirect(url_for("send_verification", email=email, role="customer"))
+            flash("Signup successful! You can login now.", "success")
+            return redirect(url_for("login_customer"))
+
 
         except Exception as e:
             print("SIGNUP ERROR:", e)
@@ -332,9 +342,6 @@ def login_farmer():
             flash("Invalid credentials", "danger")
             return redirect(url_for("login_farmer"))
 
-        if not farmer.get("verified", False):
-            flash("Please verify your email first!", "warning")
-            return redirect(url_for("login_farmer"))
 
         session["farmer_email"] = farmer["email"]
         session["farmer_wallet"] = farmer["wallet_address"]
@@ -358,10 +365,7 @@ def login_customer():
             flash("Invalid email or password", "danger")
             return redirect(url_for("login_customer"))
 
-        if not customer.get("verified", False):
-            flash("Please verify your email first!", "warning")
-            return redirect(url_for("login_customer"))
-
+        
         session["customer_email"] = customer["email"]
         session["customer_wallet"] = customer["wallet_address"]
         session["customer_private_key"] = customer["private_key"]   # <-- REQUIRED
@@ -375,74 +379,7 @@ def login_customer():
 # ------------------- SEND VERIFICATION EMAIL -------------------
 # ------------------- SEND VERIFICATION LINK -------------------
 
-@app.route("/send_verification/<email>/<role>")
-def send_verification(email, role):
-    try:
-        token = s.dumps(email, salt="email-verify")
-        link = url_for("verify_email", token=token, role=role, _external=True)
 
-        msg = Message(
-            subject="Verify your Farm2Fork account",
-            recipients=[email]
-        )
-        msg.body = f"""
-Hello,
-
-Please verify your Farm2Fork account by clicking the link below:
-
-{link}
-
-This link is valid for 1 hour.
-
-Regards,
-Farm2Fork Team
-"""
-
-        mail.send(msg)
-        print("✅ Verification email sent to:", email)
-
-        flash("Verification email sent! Please check your inbox.", "info")
-        return redirect(url_for(f"login_{role}"))
-
-    except Exception as e:
-        print("❌ EMAIL ERROR:", e)
-        flash("Email sending failed. Please try again later.", "danger")
-        return redirect(url_for(f"login_{role}"))
-
-
-
-# ------------------- VERIFY EMAIL -------------------
-# ------------------- VERIFY EMAIL -------------------
-@app.route("/verify_email/<token>/<role>")
-def verify_email(token, role):
-    try:
-        email = s.loads(token, salt="email-verify", max_age=3600)  # link valid for 1 hour
-    except:
-        return "Verification link expired or invalid.", 400
-
-    # Choose correct collection
-    if role == "farmer":
-        collection = farmers_collection
-    elif role == "customer":
-        collection = customers_collection
-    elif role == "courier":
-        collection = couriers_collection
-    else:
-        return "Invalid role", 400
-
-    user = collection.find_one({"email": email})
-
-    if not user:
-        return "User not found", 404
-
-    # Update verified status
-    collection.update_one({"email": email}, {"$set": {"verified": True}})
-
-    return f"""
-        <h2>Email verified successfully!</h2>
-        <p>Your account is now active. You can close this page.</p>
-        <a href="/login_{role}">Click here to login</a>
-    """
 # ------------------- FARMER PROFILE -------------------
 @app.route("/farmer_profile")
 def farmer_profile():
@@ -457,17 +394,25 @@ def farmer_profile():
     
     cereals = []
     for c in cereals_data:
-        ratings = c.get("ratings", [])
-        
-        if ratings and len(ratings) > 0:
-            avg_rating = round(sum(r["stars"] for r in ratings) / len(ratings), 1)
+        # ⭐ FIX: read ratings from orders
+        orders = c.get("orders", [])
+        print("ORDERS DEBUG:", orders)
+        ratings = [
+        int(o["rating"])
+        for o in orders
+        if "rating" in o and isinstance(o["rating"], int)
+        ]
+
+
+        if ratings:
+            avg_rating = round(sum(ratings) / len(ratings), 1)
         else:
             avg_rating = "No rating"
 
         c["avg_rating"] = avg_rating
         cereals.append(c)
+   
 
-    # Check if address missing
     needs_address = False
     if not farmer.get("address"):
         needs_address = True
@@ -479,6 +424,7 @@ def farmer_profile():
         cereals=cereals,
         needs_address=needs_address
     )
+
 
 
 
@@ -568,11 +514,10 @@ def add_to_cart():
 
     customer_email = session["customer_email"]
 
-    # require customer to have an address before adding to cart
     customer = customers_collection.find_one({"email": customer_email})
-    address = session.get("customer_address") or (customer.get("address") if customer else None)
+    address = customer.get("address") if customer else None
     if not address:
-        flash("Please add your delivery address before adding items to the cart.", "warning")
+        flash("Please add your delivery address first.", "warning")
         return redirect(url_for("customer_home"))
 
     product_id = request.form.get("product_id")
@@ -582,55 +527,47 @@ def add_to_cart():
         flash("Invalid product!", "danger")
         return redirect(url_for("customer_home"))
 
-    # Fetch product from cereals collection
     product = cereals_collection.find_one({"_id": ObjectId(product_id)})
     if not product:
         flash("Product not found!", "danger")
         return redirect(url_for("customer_home"))
 
     if int(product.get("availableQuantity", 0)) <= 0:
-        flash("❌ This product is OUT OF STOCK!", "danger")
+        flash("Out of stock!", "danger")
         return redirect(url_for("customer_home"))
-    
-    # Fetch user's cart document
-    user_cart = cart_collection.find_one({"email": customer_email})
 
-    if not user_cart:
-        user_cart = {"email": customer_email, "cart": []}
+    user_cart = cart_collection.find_one({"email": customer_email}) or {
+        "email": customer_email, "cart": []
+    }
 
-    cart_items = user_cart.get("cart", [])
+    cart = user_cart["cart"]
 
-    # Check if product already in cart
-    found = False
-    for item in cart_items:
+    for item in cart:
         if item["product_id"] == product_id:
             item["quantity"] += 1
             item["total"] = item["quantity"] * item["price"]
-            found = True
             break
-
-    # If not found, add as new item
-    if not found:
-        cart_items.append({
+    else:
+        cart.append({
             "product_id": product_id,
-            "blockchain_id": blockchain_id,
+            "blockchain_id": int(blockchain_id) if blockchain_id else None,
             "name": product["name"],
-            "price": product["price"],
+            "price": int(product["price"]),
             "quantity": 1,
-            "total": product["price"],
+            "total": int(product["price"]),
             "farmer_name": product.get("farmer_name", "Unknown"),
-            "farmer_wallet": product.get("farmer_wallet", "N/A")
-        })
+            "farmer_wallet": product.get("farmer_wallet")
+            })
 
-    # Save back to MongoDB
     cart_collection.update_one(
         {"email": customer_email},
-        {"$set": {"cart": cart_items}},
+        {"$set": {"cart": cart}},
         upsert=True
     )
 
     flash("Product added to cart!", "success")
     return redirect(url_for("customer_home"))
+
 
 from flask import request, redirect, url_for, session, flash
 
@@ -698,8 +635,6 @@ def cart():
         return redirect(url_for("login_customer"))
 
     customer_email = session["customer_email"]
-
-    # 🛒 Read cart from MongoDB
     user_cart = cart_collection.find_one({"email": customer_email})
     cart_items = user_cart.get("cart", []) if user_cart else []
 
@@ -707,14 +642,13 @@ def cart():
 
     for item in cart_items:
         blockchain_id = item.get("blockchain_id")
-        if blockchain_id is None:
-            continue
 
         try:
+            # 🔗 BLOCKCHAIN DATA (PRIMARY)
             product = contract.functions.getProduct(int(blockchain_id)).call()
 
             blockchain_cart.append({
-                "product_id": item.get("product_id"),
+                "product_id": item["product_id"],
                 "id": int(product[0]),
                 "name": product[1],
                 "origin": product[2],
@@ -725,27 +659,38 @@ def cart():
                 "farmer_signature": product[7],
                 "courier_signature": product[8],
                 "customer_signature": product[9],
-                "quantity": int(item.get("quantity", 1)),
-                "total": int(product[4]) * int(item.get("quantity", 1))
+                "quantity": int(item["quantity"]),
+                "total": int(product[4]) * int(item["quantity"])
             })
 
         except Exception as e:
-            print("Error:", e)
+            # 🧯 FALLBACK — NEVER DROP CART ITEM
+            print("Blockchain read failed:", e)
 
-    # 🧹 Remove invalid items
-    valid_ids = {str(i["product_id"]) for i in blockchain_cart}
-    fixed_cart = [i for i in cart_items if str(i["product_id"]) in valid_ids]
+            blockchain_cart.append({
+                "product_id": item["product_id"],
+                "id": None,
+                "name": item["name"],
+                "origin": "N/A",
+                "is_delivered": False,
+                "price": int(item["price"]),
+                "farmer_name": item.get("farmer_name", "Unknown"),
+                "farmer_wallet": item.get("farmer_wallet"),
+                "farmer_signature": None,
+                "courier_signature": None,
+                "customer_signature": None,
+                "quantity": int(item["quantity"]),
+                "total": int(item["price"]) * int(item["quantity"]),
+                "blockchain_error": True   # optional flag for UI
+            })
 
-    # Save fixed cart to DB
-    cart_collection.update_one(
-        {"email": customer_email},
-        {"$set": {"cart": fixed_cart}},
-        upsert=True
+    total_cost = sum(i["total"] for i in blockchain_cart)
+
+    return render_template(
+        "cart.html",
+        cart_items=blockchain_cart,
+        total_cost=total_cost
     )
-
-    total_cost = sum(item["total"] for item in blockchain_cart)
-
-    return render_template("cart.html", cart_items=blockchain_cart, total_cost=total_cost)
 
 
 @app.route("/remove_from_cart", methods=["POST"])
@@ -1001,13 +946,13 @@ Farm to Fork Team
     "farmer_name": farmer.get("name") if farmer else None,
     "farmer_address": farmer.get("address") if farmer else None,
     "farmer_email": farmer_email,
+    "farmer_wallet": farmer.get("wallet_address") if farmer else None, 
     "history": [{
         "stage": "Order Placed",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "location": "Order Created"
     }]
 })
-
 
     # clear cart
     cart_collection.update_one(
@@ -1435,14 +1380,13 @@ def login_courier():
         email = request.form["email"]
         password = request.form["password"]
 
-        courier = couriers_collection.find_one({"email": email, "password": password})
+        courier = couriers_collection.find_one({
+            "email": email,
+            "password": password
+        })
 
         if not courier:
             flash("Invalid email or password", "danger")
-            return redirect(url_for("login_courier"))
-
-        if not courier.get("verified", False):
-            flash("Please verify your email first!", "warning")
             return redirect(url_for("login_courier"))
 
         session["courier_email"] = courier["email"]
@@ -1452,6 +1396,7 @@ def login_courier():
         return redirect(url_for("courier_dashboard"))
 
     return render_template("login_courier.html")
+
 
 @app.route("/signup_courier", methods=["GET", "POST"])
 def signup_courier():
@@ -1480,10 +1425,11 @@ def signup_courier():
             "phone": phone,
             "vehicle": vehicle,
             "assigned_deliveries": [],
-            "verified": False
+            "verified": True   # ✅ directly verified
         })
 
-        return redirect(url_for("send_verification", email=email, role="courier"))
+        flash("Signup successful! You can login now.", "success")
+        return redirect(url_for("login_courier"))
 
     return render_template("signup_courier.html")
 
@@ -1835,6 +1781,8 @@ def courier_pickup():
         wallet = courier["wallet_address"]
         private_key = courier["private_key"]
 
+        ensure_wallet_has_gas(wallet)
+
         # blockchain tx
         nonce = w3.eth.get_transaction_count(wallet, "pending")
         txn = contract.functions.signCertificate(
@@ -1985,14 +1933,23 @@ def farmer_orders():
         flash("Please login first!", "warning")
         return redirect(url_for("login_farmer"))
 
-    farmer_email = session["farmer_email"]
-    deliveries = list(deliveries_collection.find({"farmer_email": farmer_email}))
+    farmer = farmers_collection.find_one(
+        {"email": session["farmer_email"]}
+    )
+    if not farmer:
+        flash("Farmer not found", "danger")
+        return redirect(url_for("login_farmer"))
+
+    farmer_wallet = farmer["wallet_address"]
+
+    deliveries = list(
+        deliveries_collection.find({"farmer_wallet": farmer_wallet})
+    )
 
     return render_template("farmer_orders.html", deliveries=deliveries)
 
+
 from flask_mail import Mail, Message
-
-
 
 @app.route("/request_support", methods=["POST"])
 def request_support():
