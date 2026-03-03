@@ -949,8 +949,8 @@ def pay_now():
     # farmer info (FIXED)
     "farmer_name": it.get("farmer_name"),
     "farmer_address": it.get("farmer_address"),
-    "farmer_email": None,
-    "farmer_wallet": None,
+    "farmer_email": farmer_email,
+    "farmer_wallet": farmer.get("wallet_address") if farmer else None,
     "history": [{
         "stage": "Order Placed",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
