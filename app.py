@@ -757,6 +757,10 @@ def pay_now():
     order_items = []
 
     for item in cart:
+        cereal_order_id = str(ObjectId()) 
+        assigned_email = None             
+        farmer = None                       
+        farmer_email = None 
         mongo_id = item['product_id']
 
         cereal_doc = cereals_collection.find_one({"_id": ObjectId(mongo_id)})
@@ -776,9 +780,9 @@ def pay_now():
         farmer = farmers_collection.find_one({"email": farmer_email}) if farmer_email else None
 
         # read product from contract
+        price_wei = int(cereal_doc.get("price", 0)) 
         try:
             product = contract.functions.getProduct(blockchain_id).call()
-            price_wei = int(product[4])
             name = product[1]
         except Exception as e:
             price_wei = int(cereal_doc.get("price", 0))
@@ -787,7 +791,7 @@ def pay_now():
 
         ensure_wallet_has_gas(customer_wallet)
 
-        assigned_email = None
+        
 
         try:
             nonce = w3.eth.get_transaction_count(customer_wallet, "pending")
@@ -858,8 +862,7 @@ Farm to Fork Team
                 except Exception as e:
                     print("Email sending failed:", e)
 
-            # push order record inside cereal
-            cereal_order_id = str(ObjectId())
+            
             cereals_collection.update_one(
                 {"blockchain_id": blockchain_id},
                 {"$push": {"orders": {
@@ -943,10 +946,11 @@ Farm to Fork Team
     "customer_map": map_link,
 
     # NEW ➜ farmer info
-    "farmer_name": farmer.get("name") if farmer else None,
-    "farmer_address": farmer.get("address") if farmer else None,
-    "farmer_email": farmer_email,
-    "farmer_wallet": farmer.get("wallet_address") if farmer else None, 
+    # farmer info (FIXED)
+    "farmer_name": it.get("farmer_name"),
+    "farmer_address": it.get("farmer_address"),
+    "farmer_email": None,
+    "farmer_wallet": None,
     "history": [{
         "stage": "Order Placed",
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
