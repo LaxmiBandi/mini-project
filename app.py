@@ -834,33 +834,33 @@ def pay_now():
                     {"$set": {"assigned_courier": assigned_email}}
                 )
 
-                # >>> ADDED FOR EMAIL NOTIFICATION <<<
-                try:
-                    msg = Message(
-                        subject="New Delivery Assigned - Farm to Fork",
-                        sender=app.config['MAIL_USERNAME'],
-                        recipients=[assigned_email]
-                    )
-                    msg.body = f"""
-Hello {best_courier.get('name', 'Courier')},
+#                 # >>> ADDED FOR EMAIL NOTIFICATION <<<
+#                 try:
+#                     msg = Message(
+#                         subject="New Delivery Assigned - Farm to Fork",
+#                         sender=app.config['MAIL_USERNAME'],
+#                         recipients=[assigned_email]
+#                     )
+#                     msg.body = f"""
+# Hello {best_courier.get('name', 'Courier')},
 
-A new order has been assigned to you.
+# A new order has been assigned to you.
 
-Order Details:
------------------------
-Product: {name}
-Quantity: {quantity} kg
-Customer: {customer.get('name')}
-Address: {address}
+# Order Details:
+# -----------------------
+# Product: {name}
+# Quantity: {quantity} kg
+# Customer: {customer.get('name')}
+# Address: {address}
 
-Please check your courier dashboard for tracking and updates.
+# Please check your courier dashboard for tracking and updates.
 
-Regards,
-Farm to Fork Team
-                    """
-                    mail.send(msg)
-                except Exception as e:
-                    print("Email sending failed:", e)
+# Regards,
+# Farm to Fork Team
+#                     """
+#                     mail.send(msg)
+#                 except Exception as e:
+#                     print("Email sending failed:", e)
 
             
             cereals_collection.update_one(
